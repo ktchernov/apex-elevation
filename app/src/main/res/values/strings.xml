@@ -1,0 +1,10 @@
+<resources>
+	<string name="app_name">Simple Elevation</string>
+	<string name="location_permission_rationale_title">Location permission</string>
+	<string name="location_permission_rationale_message">Simple Elevation needs to access your GPS
+		location in order to show you your elevation.
+	</string>
+	<string name="location_permission_required_snackbar">Please enable allow access to your location
+	</string>
+	<string name="settings_link">Settings</string>
+</resources>
