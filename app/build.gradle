@@ -43,7 +43,7 @@ dependencies {
 
 	compile 'com.android.support.constraint:constraint-layout:1.0.0-alpha7'
 
-	compile 'pl.charmas.android:android-reactive-location:0.9@aar'
+	compile 'com.github.ktchernov:Android-ReactiveLocation:-SNAPSHOT'
 
 	compile 'com.google.android.gms:play-services-location:9.4.0'
 
