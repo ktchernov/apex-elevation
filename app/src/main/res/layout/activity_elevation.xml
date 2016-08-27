@@ -9,6 +9,12 @@
 	android:background="@color/colorPrimaryDark"
 	tools:context="io.github.ktchernov.simpleelevation.ElevationActivity">
 
+	<ImageView
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:src="@drawable/watercolour_cropped"
+		android:scaleType="centerCrop"/>
+
 	<TextView
 		android:id="@+id/elevation_text_view"
 		android:layout_width="wrap_content"
