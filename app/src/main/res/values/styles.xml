@@ -10,7 +10,10 @@
 
 	<style name="ElevationTextAppearance" parent="TextAppearance.AppCompat.Display4">
 		<item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
-		<!--<item name="android:textColor">?attr/colorAccent</item>-->
+	</style>
+
+	<style name="ElevationUnitTextAppearance" parent="TextAppearance.AppCompat.Display3">
+		<item name="android:textColor">?android:attr/textColorPrimaryInverse</item>
 	</style>
 
 </resources>

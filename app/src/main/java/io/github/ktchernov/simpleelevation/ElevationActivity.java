@@ -21,7 +21,6 @@ import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.Locale;
 
 import javax.inject.Inject;
 
@@ -139,8 +138,7 @@ public class ElevationActivity extends AppCompatActivity {
 		Double elevationValue = elevation.elevation;
 		String altitudeString = elevationValue == null ?
 				getString(R.string.no_signal_elevation_placeholder) :
-				String.format(
-						Locale.getDefault(), "%s%s", numberFormat.format(elevationValue), "m");
+				numberFormat.format(elevationValue);
 
 		if (elevation.fromGps) {
 			altitudeString = "approx. " + altitudeString;
