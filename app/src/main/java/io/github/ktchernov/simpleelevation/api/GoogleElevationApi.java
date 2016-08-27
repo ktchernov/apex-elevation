@@ -35,12 +35,12 @@ public interface GoogleElevationApi {
 	}
 
 	class ElevationResult {
-		static final String STATUS_OK = "OK";
+		public static final String STATUS_OK = "OK";
 
 		@Json(name = "status") private String status;
 		@Json(name = "results") private List<Result> results;
 
-		ElevationResult(String status, List<Result> results) {
+		public ElevationResult(String status, List<Result> results) {
 			this.status = status;
 			this.results = results;
 		}
@@ -53,10 +53,10 @@ public interface GoogleElevationApi {
 			return Elevation.fromApi(results.get(0).elevation);
 		}
 
-		static class Result {
+		public static class Result {
 			@Json(name = "elevation") double elevation;
 
-			Result(double elevation) {
+			public Result(double elevation) {
 				this.elevation = elevation;
 			}
 		}

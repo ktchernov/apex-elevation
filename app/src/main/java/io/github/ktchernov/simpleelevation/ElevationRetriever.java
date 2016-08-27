@@ -25,7 +25,6 @@ class ElevationRetriever {
 	}
 
 	Observable<Elevation> elevationObservable(Location location) {
-
 		Elevation gpsElevation = Elevation.fromGps(location.getAltitude());
 
 		return elevationApi.getElevation(Locations.from(location), apiKey)
