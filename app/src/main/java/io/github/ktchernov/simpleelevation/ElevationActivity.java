@@ -3,6 +3,7 @@ package io.github.ktchernov.simpleelevation;
 import com.google.android.gms.location.LocationRequest;
 
 import android.Manifest;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
@@ -128,6 +129,9 @@ public class ElevationActivity extends AppCompatActivity {
 				new AlertDialog.Builder(this)
 						.setTitle(R.string.location_permission_rationale_title)
 						.setMessage(R.string.location_permission_rationale_message)
+						.setPositiveButton(R.string.go_to_settings, this::openSettings)
+						.setNegativeButton(R.string.dismiss,
+								(dialogInterface, button) -> dialogInterface.dismiss())
 						.show();
 			} else {
 				ActivityCompat.requestPermissions(this,
@@ -140,6 +144,14 @@ public class ElevationActivity extends AppCompatActivity {
 		}
 
 		return true;
+	}
+
+	private void openSettings(DialogInterface dialogInterface, int buttonIndex) {
+		Intent intent = new Intent();
+		intent.setAction(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+		Uri uri = Uri.fromParts("package", getPackageName(), null);
+		intent.setData(uri);
+		startActivity(intent);
 	}
 
 	private void onElevation(Elevation elevation) {
