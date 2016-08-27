@@ -14,10 +14,10 @@ import java.util.concurrent.TimeUnit;
 import io.github.ktchernov.simpleelevation.api.Elevation;
 import io.github.ktchernov.simpleelevation.api.GoogleElevationApi;
 import io.github.ktchernov.simpleelevation.api.GoogleElevationApi.ElevationResult;
+import io.github.ktchernov.simpleelevation.api.MockElevationApi;
 import io.github.ktchernov.simpleelevation.api.ThreadModel;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;
-import retrofit2.http.Query;
 import retrofit2.mock.BehaviorDelegate;
 import retrofit2.mock.MockRetrofit;
 import retrofit2.mock.NetworkBehavior;
@@ -102,22 +102,4 @@ public class ElevationRetrieverTest {
 		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION));
 	}
 
-	private static class MockElevationApi implements GoogleElevationApi {
-		private final BehaviorDelegate<GoogleElevationApi> delegate;
-		private ElevationResult elevationResult;
-
-		MockElevationApi(BehaviorDelegate<GoogleElevationApi> delegate) {
-			this.delegate = delegate;
-		}
-
-		void setElevation(ElevationResult elevationResult) {
-			this.elevationResult = elevationResult;
-		}
-
-		@Override public Observable<ElevationResult> getElevation(
-				@Query("locations") Locations locations,
-				@Query("key") String apiKey) {
-			return delegate.returningResponse(elevationResult).getElevation(locations, apiKey);
-		}
-	}
 }

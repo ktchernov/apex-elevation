@@ -4,6 +4,7 @@ import android.location.Location;
 
 import com.squareup.moshi.Json;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
@@ -43,6 +44,10 @@ public interface GoogleElevationApi {
 		public ElevationResult(String status, List<Result> results) {
 			this.status = status;
 			this.results = results;
+		}
+
+		public static ElevationResult successResult(double elevation) {
+			return new ElevationResult(STATUS_OK, Collections.singletonList(new Result(elevation)));
 		}
 
 		public Elevation getElevation() {
