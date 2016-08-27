@@ -1,4 +1,4 @@
-package io.github.ktchernov.simpleelevation;
+package io.github.ktchernov.simpleelevation.api;
 
 import android.location.Location;
 
@@ -11,7 +11,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 import rx.Observable;
 
-interface GoogleElevationApi {
+public interface GoogleElevationApi {
 
 	@GET("elevation/json") Observable<ElevationResult> getElevation(
 			@Query("locations") Locations locations,

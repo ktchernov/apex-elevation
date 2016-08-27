@@ -11,7 +11,9 @@ import org.mockito.runners.MockitoJUnitRunner;
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
-import io.github.ktchernov.simpleelevation.GoogleElevationApi.ElevationResult;
+import io.github.ktchernov.simpleelevation.api.Elevation;
+import io.github.ktchernov.simpleelevation.api.GoogleElevationApi;
+import io.github.ktchernov.simpleelevation.api.GoogleElevationApi.ElevationResult;
 import io.github.ktchernov.simpleelevation.api.ThreadModel;
 import okhttp3.OkHttpClient;
 import retrofit2.Retrofit;

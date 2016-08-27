@@ -5,7 +5,9 @@ import android.location.Location;
 import javax.inject.Inject;
 import javax.inject.Named;
 
-import io.github.ktchernov.simpleelevation.GoogleElevationApi.Locations;
+import io.github.ktchernov.simpleelevation.api.Elevation;
+import io.github.ktchernov.simpleelevation.api.GoogleElevationApi;
+import io.github.ktchernov.simpleelevation.api.GoogleElevationApi.Locations;
 import io.github.ktchernov.simpleelevation.api.ThreadModel;
 import rx.Observable;
 import timber.log.Timber;

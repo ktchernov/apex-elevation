@@ -7,6 +7,7 @@ import javax.inject.Singleton;
 
 import dagger.Module;
 import dagger.Provides;
+import io.github.ktchernov.simpleelevation.api.GoogleElevationApi;
 import okhttp3.OkHttpClient;
 import okhttp3.logging.HttpLoggingInterceptor;
 import retrofit2.Retrofit;
@@ -35,7 +36,7 @@ import retrofit2.converter.moshi.MoshiConverterFactory;
 		return buildRetrofit(okHttpClient);
 	}
 
-	@NonNull public static Retrofit buildRetrofit(OkHttpClient okHttpClient) {
+	@NonNull static Retrofit buildRetrofit(OkHttpClient okHttpClient) {
 		return new Retrofit.Builder()
 				.baseUrl(GOOGLE_MAPS_API_BASE_URL)
 				.addCallAdapterFactory(RxJavaCallAdapterFactory.create())

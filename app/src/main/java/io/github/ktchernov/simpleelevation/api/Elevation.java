@@ -1,4 +1,4 @@
-package io.github.ktchernov.simpleelevation;
+package io.github.ktchernov.simpleelevation.api;
 
 public class Elevation {
 	public final Double elevation;

@@ -27,6 +27,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import io.github.ktchernov.simpleelevation.api.Elevation;
 import rx.Subscription;
 import rx.subscriptions.Subscriptions;
 import timber.log.Timber;
