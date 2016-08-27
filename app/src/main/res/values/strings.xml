@@ -7,6 +7,7 @@
 	<string name="location_permission_required_snackbar">Please enable allow access to your location
 	</string>
 	<string name="settings_link">Settings</string>
-	<string name="no_signal_elevation_placeholder">--</string>
+	<string name="no_signal_elevation_placeholder">—</string>
 	<string name="unit_metres">m</string>
+	<string name="unit_feet">ft</string>
 </resources>

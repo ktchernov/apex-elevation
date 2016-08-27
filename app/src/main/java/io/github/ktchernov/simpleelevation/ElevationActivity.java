@@ -44,11 +44,12 @@ public class ElevationActivity extends AppCompatActivity {
 	private final NumberFormat numberFormat = new DecimalFormat("###,###");
 	private ReactiveLocationProvider reactiveLocationProvider;
 	private Subscription elevationFetchSubscription = Subscriptions.unsubscribed();
-	private ElevationComponent elevationComponent;
+	private UnitLocale unitLocale;
 
 	@Inject ElevationRetriever elevationRetriever;
 
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
+	@BindView(R.id.elevation_unit_text_view) TextView elevationUnitTextView;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -58,7 +59,7 @@ public class ElevationActivity extends AppCompatActivity {
 
 		reactiveLocationProvider = new ReactiveLocationProvider(getApplicationContext());
 
-		elevationComponent = DaggerElevationComponent.builder()
+		ElevationComponent elevationComponent = DaggerElevationComponent.builder()
 				.elevationModule(new ElevationModule(getString(R.string.googleElevationApiKey)))
 				.build();
 
@@ -85,6 +86,13 @@ public class ElevationActivity extends AppCompatActivity {
 
 	@Override protected void onStart() {
 		super.onStart();
+
+		unitLocale = UnitLocale.getDefault();
+		if (unitLocale == UnitLocale.IMPERIAL) {
+			elevationUnitTextView.setText(R.string.unit_feet);
+		} else {
+			elevationUnitTextView.setText(R.string.unit_metres);
+		}
 
 		if (requestLocationPermission()) {
 			startFetchLocation();
@@ -138,7 +146,7 @@ public class ElevationActivity extends AppCompatActivity {
 		Double elevationValue = elevation.elevation;
 		String altitudeString = elevationValue == null ?
 				getString(R.string.no_signal_elevation_placeholder) :
-				numberFormat.format(elevationValue);
+				numberFormat.format(unitLocale.convertMetres(elevationValue));
 
 		if (elevation.fromGps) {
 			altitudeString = "approx. " + altitudeString;

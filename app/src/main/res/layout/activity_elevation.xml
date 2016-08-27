@@ -20,7 +20,9 @@
 		app:layout_constraintRight_toRightOf="parent"
 		app:layout_constraintTop_toTopOf="parent"/>
 
-	<TextView android:layout_width="wrap_content"
+	<TextView
+		android:id="@+id/elevation_unit_text_view"
+		android:layout_width="wrap_content"
 		android:layout_height="wrap_content"
 		android:textAppearance="@style/ElevationUnitTextAppearance"
 		android:text="@string/unit_metres"
