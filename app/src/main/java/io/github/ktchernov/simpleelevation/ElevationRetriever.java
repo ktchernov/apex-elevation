@@ -13,12 +13,12 @@ import rx.android.schedulers.AndroidSchedulers;
 import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
-public class ElevationRetriever {
+class ElevationRetriever {
 
 	private final GoogleElevationApi elevationApi;
 	private final String apiKey;
 
-	public ElevationRetriever(String apiKey) {
+	ElevationRetriever(String apiKey) {
 		this.apiKey = apiKey;
 
 		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
@@ -37,11 +37,11 @@ public class ElevationRetriever {
 				.create(GoogleElevationApi.class);
 	}
 
-	public Observable<Double> elevationObservable(Location location) {
+	Observable<Elevation> elevationObservable(Location location) {
 		return elevationApi.getElevation(Locations.from(location), apiKey)
 				.map(GoogleElevationApi.ElevationResult::getElevation)
 				.doOnError(throwable -> Timber.e(throwable, "Error fetching elevation"))
-				.onErrorResumeNext(Observable.just(0.0))
+				.onErrorResumeNext(Observable.just(Elevation.fromGps(location.getAltitude())))
 				.subscribeOn(Schedulers.io())
 				.observeOn(AndroidSchedulers.mainThread());
 

@@ -12,7 +12,7 @@ import retrofit2.http.GET;
 import retrofit2.http.Query;
 import rx.Observable;
 
-public interface GoogleElevationApi {
+interface GoogleElevationApi {
 
 	@GET("elevation/json") Observable<ElevationResult> getElevation(
 			@Query("locations") Locations locations,
@@ -25,7 +25,7 @@ public interface GoogleElevationApi {
 			this.locationsString = locationsString;
 		}
 
-		public String toString() {
+		@Override public String toString() {
 			return locationsString;
 		}
 
@@ -36,7 +36,6 @@ public interface GoogleElevationApi {
 	}
 
 	class ElevationResult {
-
 		@Json(name = "status") private String status;
 		@Json(name = "results") private List<Result> results;
 
@@ -44,12 +43,12 @@ public interface GoogleElevationApi {
 			@Json(name = "elevation") double elevation;
 		}
 
-		public double getElevation() {
+		public Elevation getElevation() {
 			if (!TextUtils.equals(status, "OK") || results == null || results.size() == 0) {
-				return 0.0;
+				return Elevation.fromApi(null);
 			}
 
-			return results.get(0).elevation;
+			return Elevation.fromApi(results.get(0).elevation);
 		}
 	}
 }

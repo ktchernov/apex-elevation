@@ -40,13 +40,14 @@ public class ElevationActivity extends AppCompatActivity {
 	private final NumberFormat numberFormat = new DecimalFormat("###,###");
 
 	static {
-		Timber.plant(new Timber.DebugTree());
+		if (BuildConfig.DEBUG) {
+			Timber.plant(new Timber.DebugTree());
+		}
 	}
 
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 
-	@Override
-	protected void onCreate(Bundle savedInstanceState) {
+	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_elevation);
 
@@ -125,9 +126,16 @@ public class ElevationActivity extends AppCompatActivity {
 		return true;
 	}
 
-	private void onElevation(Double elevation) {
-		String altitudeString =
-				String.format(Locale.getDefault(), "%s%s", numberFormat.format(elevation), "m");
+	private void onElevation(Elevation elevation) {
+		Double elevationValue = elevation.elevation;
+		String altitudeString = elevationValue == null ?
+				getString(R.string.no_signal_elevation_placeholder) :
+				String.format(
+						Locale.getDefault(), "%s%s", numberFormat.format(elevationValue), "m");
+
+		if (elevation.fromGps) {
+			altitudeString = "approx. " + altitudeString;
+		}
 
 		elevationTextView.setText(altitudeString);
 	}
