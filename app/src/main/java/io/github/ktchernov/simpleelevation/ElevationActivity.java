@@ -105,8 +105,8 @@ public class ElevationActivity extends AppCompatActivity {
 
 		elevationFetchSubscription = reactiveLocationProvider
 				.getUpdatedLocation(request)
-				.concatMap(location -> elevationRetriever.elevationObservable(location))
 				.onBackpressureLatest()
+				.concatMap(location -> elevationRetriever.elevationObservable(location))
 				.subscribe(this::onElevation);
 	}
 
