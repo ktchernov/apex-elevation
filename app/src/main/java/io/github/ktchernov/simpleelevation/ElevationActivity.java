@@ -1,10 +1,14 @@
 package io.github.ktchernov.simpleelevation;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.SupportErrorDialogFragment;
 import com.google.android.gms.location.LocationRequest;
 
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,6 +23,7 @@ import android.view.View;
 import android.widget.TextView;
 
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
+import pl.charmas.android.reactivelocation.observables.GoogleAPIConnectionException;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -41,6 +46,7 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	private static final int REQUEST_CODE_GRANT_LOCATION_PERMISSION = 100;
+	private static final int REQUEST_RESOLVE_ERROR = 101;
 
 	private final NumberFormat numberFormat = new DecimalFormat("###,###");
 	private ReactiveLocationProvider reactiveLocationProvider;
@@ -116,7 +122,7 @@ public class ElevationActivity extends AppCompatActivity {
 				.getUpdatedLocation(request)
 				.onBackpressureLatest()
 				.concatMap(location -> elevationRetriever.elevationObservable(location))
-				.subscribe(this::onElevation);
+				.subscribe(this::onElevation, this::onElevationError);
 	}
 
 	private boolean requestLocationPermission() {
@@ -155,6 +161,11 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	private void onElevation(Elevation elevation) {
+		if (elevation == null) {
+			elevationTextView.setText(R.string.no_signal_elevation_placeholder);
+			elevationFetchSubscription.unsubscribe();
+			return;
+		}
 		Double elevationValue = elevation.elevation;
 		String altitudeString = elevationValue == null ?
 				getString(R.string.no_signal_elevation_placeholder) :
@@ -165,6 +176,46 @@ public class ElevationActivity extends AppCompatActivity {
 		}
 
 		elevationTextView.setText(altitudeString);
+	}
+
+	private void onElevationError(Throwable throwable) {
+		if (throwable instanceof GoogleAPIConnectionException) {
+			try {
+				GoogleAPIConnectionException googleAPIConnectionException =
+						(GoogleAPIConnectionException) throwable;
+
+				ConnectionResult connectionResult =
+						googleAPIConnectionException.getConnectionResult();
+
+				if (connectionResult.hasResolution()) {
+					connectionResult
+							.startResolutionForResult(
+									this,
+									ConnectionResult.RESOLUTION_REQUIRED);
+					return;
+				} else {
+					SupportErrorDialogFragment errorDialogFragment =
+							new SupportErrorDialogFragment();
+					Bundle args = new Bundle();
+					args.putInt("dialog_error", connectionResult.getErrorCode());
+					errorDialogFragment.setArguments(args);
+					errorDialogFragment.show(getSupportFragmentManager(), "errordialog");
+
+					GoogleApiAvailability.getInstance().getErrorDialog(
+							this, connectionResult.getErrorCode(), REQUEST_RESOLVE_ERROR).show();
+
+					return;
+				}
+			} catch (IntentSender.SendIntentException e) {
+				Timber.e(e, "Could not send intent");
+			}
+		}
+
+		new AlertDialog.Builder(this)
+				.setMessage(R.string.error_could_not_fetch_location)
+				.setNegativeButton(R.string.dismiss, ((dialogInterface, buttonIndex) ->
+						dialogInterface.dismiss()))
+				.show();
 	}
 
 	private void onSnackbarSettingsClick(View view) {
