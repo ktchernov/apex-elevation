@@ -12,12 +12,34 @@ public class Elevation {
 		return new Elevation(elevation, true);
 	}
 
-	private Elevation(Double elevation, boolean fromGps) {
+	Elevation(Double elevation, boolean fromGps) {
 		this.elevation = elevation;
 		this.fromGps = fromGps;
 	}
 
 	public Double elevation() {
 		return elevation;
+	}
+
+	@Override public boolean equals(Object o) {
+		Elevation elevationOther = (Elevation) o;
+
+		return fromGps == elevationOther.fromGps &&
+				(elevation != null ? elevation.equals(elevationOther.elevation) :
+						elevationOther.elevation == null);
+
+	}
+
+	@Override public int hashCode() {
+		int result = elevation != null ? elevation.hashCode() : 0;
+		result = 31 * result + (fromGps ? 1 : 0);
+		return result;
+	}
+
+	@Override public String toString() {
+		return "Elevation{" +
+				"elevation=" + elevation +
+				", fromGps=" + fromGps +
+				'}';
 	}
 }

@@ -23,6 +23,8 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+import javax.inject.Inject;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import rx.Subscription;
@@ -31,19 +33,20 @@ import timber.log.Timber;
 
 public class ElevationActivity extends AppCompatActivity {
 
-	private static final int REQUEST_CODE_GRANT_LOCATION_PERMISSION = 100;
-
-	private ReactiveLocationProvider reactiveLocationProvider;
-	private ElevationRetriever elevationRetriever;
-	private Subscription elevationFetchSubscription = Subscriptions.empty();
-
-	private final NumberFormat numberFormat = new DecimalFormat("###,###");
-
 	static {
 		if (BuildConfig.DEBUG) {
 			Timber.plant(new Timber.DebugTree());
 		}
 	}
+
+	private static final int REQUEST_CODE_GRANT_LOCATION_PERMISSION = 100;
+
+	private final NumberFormat numberFormat = new DecimalFormat("###,###");
+	private ReactiveLocationProvider reactiveLocationProvider;
+	private Subscription elevationFetchSubscription = Subscriptions.unsubscribed();
+	private ElevationComponent elevationComponent;
+
+	@Inject ElevationRetriever elevationRetriever;
 
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 
@@ -53,8 +56,13 @@ public class ElevationActivity extends AppCompatActivity {
 
 		ButterKnife.bind(this);
 
-		elevationRetriever = new ElevationRetriever(getString(R.string.googleElevationApiKey));
 		reactiveLocationProvider = new ReactiveLocationProvider(getApplicationContext());
+
+		elevationComponent = DaggerElevationComponent.builder()
+				.elevationModule(new ElevationModule(getString(R.string.googleElevationApiKey)))
+				.build();
+
+		elevationComponent.inject(this);
 	}
 
 	@Override public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions,

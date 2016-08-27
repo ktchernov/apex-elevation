@@ -1,7 +1,6 @@
 package io.github.ktchernov.simpleelevation;
 
 import android.location.Location;
-import android.text.TextUtils;
 
 import com.squareup.moshi.Json;
 
@@ -36,19 +35,30 @@ interface GoogleElevationApi {
 	}
 
 	class ElevationResult {
+		static final String STATUS_OK = "OK";
+
 		@Json(name = "status") private String status;
 		@Json(name = "results") private List<Result> results;
 
-		private static class Result {
-			@Json(name = "elevation") double elevation;
+		ElevationResult(String status, List<Result> results) {
+			this.status = status;
+			this.results = results;
 		}
 
 		public Elevation getElevation() {
-			if (!TextUtils.equals(status, "OK") || results == null || results.size() == 0) {
+			if (!STATUS_OK.equals(status) || results == null || results.size() == 0) {
 				return Elevation.fromApi(null);
 			}
 
 			return Elevation.fromApi(results.get(0).elevation);
+		}
+
+		static class Result {
+			@Json(name = "elevation") double elevation;
+
+			Result(double elevation) {
+				this.elevation = elevation;
+			}
 		}
 	}
 }

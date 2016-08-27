@@ -2,49 +2,36 @@ package io.github.ktchernov.simpleelevation;
 
 import android.location.Location;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import io.github.ktchernov.simpleelevation.GoogleElevationApi.Locations;
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Retrofit;
-import retrofit2.adapter.rxjava.RxJavaCallAdapterFactory;
-import retrofit2.converter.moshi.MoshiConverterFactory;
+import io.github.ktchernov.simpleelevation.api.ThreadModel;
 import rx.Observable;
-import rx.android.schedulers.AndroidSchedulers;
-import rx.schedulers.Schedulers;
 import timber.log.Timber;
 
 class ElevationRetriever {
-
 	private final GoogleElevationApi elevationApi;
 	private final String apiKey;
+	private final ThreadModel threadModel;
 
-	ElevationRetriever(String apiKey) {
+	@Inject ElevationRetriever(GoogleElevationApi elevationApi, @Named("ApiKey") String apiKey,
+							   ThreadModel threadModel) {
+		this.elevationApi = elevationApi;
 		this.apiKey = apiKey;
-
-		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-		logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
-
-		OkHttpClient client = new OkHttpClient.Builder()
-				.addInterceptor(logging)
-				.build();
-
-		elevationApi = new Retrofit.Builder()
-				.baseUrl("https://maps.googleapis.com/maps/api/")
-				.addCallAdapterFactory(RxJavaCallAdapterFactory.create())
-				.addConverterFactory(MoshiConverterFactory.create())
-				.client(client)
-				.build()
-				.create(GoogleElevationApi.class);
+		this.threadModel = threadModel;
 	}
 
 	Observable<Elevation> elevationObservable(Location location) {
+
+		Elevation gpsElevation = Elevation.fromGps(location.getAltitude());
+
 		return elevationApi.getElevation(Locations.from(location), apiKey)
 				.map(GoogleElevationApi.ElevationResult::getElevation)
 				.doOnError(throwable -> Timber.e(throwable, "Error fetching elevation"))
-				.onErrorResumeNext(Observable.just(Elevation.fromGps(location.getAltitude())))
-				.subscribeOn(Schedulers.io())
-				.observeOn(AndroidSchedulers.mainThread());
-
+				.map(elevation -> elevation.elevation == null ? gpsElevation : elevation)
+				.onErrorReturn(throwable -> gpsElevation)
+				.compose(threadModel.transformer());
 	}
 
 }
