@@ -25,7 +25,7 @@ class UnitLocale {
 		this.isImperial = isImperial;
 	}
 
-	public final double convertMetres(double metres) {
-		return isImperial ? metres / 0.3048 : metres;
+	final double convertMetres(double metres) {
+		return isImperial ? metres / FEET_TO_METRES : metres;
 	}
 }

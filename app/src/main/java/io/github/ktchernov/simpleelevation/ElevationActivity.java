@@ -60,7 +60,7 @@ public class ElevationActivity extends AppCompatActivity {
 	@BindView(R.id.approximate_warning) View approximateWarning;
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 	@BindView(R.id.elevation_unit_text_view) TextView elevationUnitTextView;
-	private boolean noNetworkWarningShowing;
+	private Snackbar noNetworkSnackbar;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -176,18 +176,25 @@ public class ElevationActivity extends AppCompatActivity {
 				numberFormat.format(unitLocale.convertMetres(elevationValue));
 
 		if (elevation.fromGps) {
-//			altitudeString = "approx. " + altitudeString;
 			approximateWarning.setVisibility(View.VISIBLE);
-			if (!noNetworkWarningShowing) {
-				noNetworkWarningShowing = true;
-				Snackbar.make(contentLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
-						.show();
+			if (!noNetworkShowing()) {
+				noNetworkSnackbar = Snackbar.make(contentLayout, R.string.no_internet,
+						Snackbar.LENGTH_INDEFINITE);
+				noNetworkSnackbar.show();
 			}
 		} else {
 			approximateWarning.setVisibility(View.INVISIBLE);
+			if (noNetworkShowing()) {
+				noNetworkSnackbar.dismiss();
+				noNetworkSnackbar = null;
+			}
 		}
 
 		elevationTextView.setText(altitudeString);
+	}
+
+	public boolean noNetworkShowing() {
+		return noNetworkSnackbar != null && noNetworkSnackbar.isShownOrQueued();
 	}
 
 	private void onElevationError(Throwable throwable) {
