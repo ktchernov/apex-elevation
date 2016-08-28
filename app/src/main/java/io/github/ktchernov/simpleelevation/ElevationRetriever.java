@@ -16,6 +16,8 @@ class ElevationRetriever {
 	private final GoogleElevationApi elevationApi;
 	private final String apiKey;
 	private final ThreadModel threadModel;
+	private Location lastLocation;
+	private Elevation lastElevation;
 
 	@Inject ElevationRetriever(GoogleElevationApi elevationApi, @Named("ApiKey") String apiKey,
 							   ThreadModel threadModel) {
@@ -27,12 +29,23 @@ class ElevationRetriever {
 	Observable<Elevation> elevationObservable(Location location) {
 		Elevation gpsElevation = Elevation.fromGps(location.getAltitude());
 
+		if (lastLocation != null && lastLocation.distanceTo(location) < 5.0) {
+			Timber.v("Cached location used");
+			return Observable.just(lastElevation);
+		}
+
 		return elevationApi.getElevation(Locations.from(location), apiKey)
 				.map(GoogleElevationApi.ElevationResult::getElevation)
+				.doOnNext(elevation -> cacheElevation(location, elevation))
 				.doOnError(throwable -> Timber.e(throwable, "Error fetching elevation"))
 				.map(elevation -> elevation.elevation == null ? gpsElevation : elevation)
 				.onErrorReturn(throwable -> gpsElevation)
 				.compose(threadModel.transformer());
+	}
+
+	private void cacheElevation(Location location, Elevation elevation) {
+		this.lastLocation = location;
+		this.lastElevation = elevation;
 	}
 
 }
