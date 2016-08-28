@@ -10,6 +10,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.pm.PackageManager;
+import android.location.Location;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -28,12 +29,14 @@ import pl.charmas.android.reactivelocation.observables.GoogleAPIConnectionExcept
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import io.github.ktchernov.simpleelevation.api.Elevation;
+import rx.Observable;
 import rx.Subscription;
 import rx.subscriptions.Subscriptions;
 import timber.log.Timber;
@@ -53,6 +56,7 @@ public class ElevationActivity extends AppCompatActivity {
 	private ReactiveLocationProvider reactiveLocationProvider;
 	private Subscription elevationFetchSubscription = Subscriptions.unsubscribed();
 	private UnitLocale unitLocale;
+	private boolean locationIsStale;
 
 	@Inject ElevationRetriever elevationRetriever;
 
@@ -117,16 +121,37 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	private void startFetchLocation() {
+		Timber.v("startFetchLocation");
 		LocationRequest request = LocationRequest.create() //standard GMS LocationRequest
 				.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 				.setFastestInterval(500)
-				.setInterval(1000);
+				.setInterval(2000);
 
 		elevationFetchSubscription = reactiveLocationProvider
 				.getUpdatedLocation(request)
+				.doOnNext(location -> locationIsStale = false)
+				.timeout(10, TimeUnit.SECONDS, getLastKnown())
+				.switchIfEmpty(onNoLocationAtAll())
+				.doOnCompleted(() -> contentLayout.postDelayed(this::startFetchLocation, 5000))
 				.onBackpressureLatest()
 				.concatMap(location -> elevationRetriever.elevationObservable(location))
 				.subscribe(this::onElevation, this::onElevationError);
+	}
+
+	private Observable<Location> onNoLocationAtAll() {
+		return Observable.defer(() -> {
+			locationIsStale = true;
+			onElevation(null);
+			return Observable.empty();
+		});
+	}
+
+	private Observable<Location> getLastKnown() {
+		return reactiveLocationProvider.getLastKnownLocation()
+				.doOnSubscribe(() -> {
+					locationIsStale = true;
+					Timber.v("Attempting last known location");
+				});
 	}
 
 	private boolean requestLocationPermission() {
@@ -166,6 +191,7 @@ public class ElevationActivity extends AppCompatActivity {
 
 	private void onElevation(Elevation elevation) {
 		if (elevation == null) {
+			hideLocationIsInaccurate();
 			elevationTextView.setText(R.string.no_signal_elevation_placeholder);
 			elevationFetchSubscription.unsubscribe();
 			return;
@@ -176,18 +202,24 @@ public class ElevationActivity extends AppCompatActivity {
 				numberFormat.format(unitLocale.convertMetres(elevationValue));
 
 		if (elevation.fromGps) {
-			approximateWarning.setVisibility(View.VISIBLE);
+			showLocationIsInaccurate();
 			if (!noNetworkShowing()) {
 				noNetworkSnackbar = Snackbar.make(contentLayout, R.string.no_internet,
 						Snackbar.LENGTH_INDEFINITE);
 				noNetworkSnackbar.show();
 			}
 		} else {
-			approximateWarning.setVisibility(View.INVISIBLE);
+			hideLocationIsInaccurate();
 			if (noNetworkShowing()) {
 				noNetworkSnackbar.dismiss();
 				noNetworkSnackbar = null;
 			}
+		}
+
+		if (locationIsStale) {
+			showLocationIsInaccurate();
+		} else if (!elevation.fromGps) {
+			hideLocationIsInaccurate();
 		}
 
 		elevationTextView.setText(altitudeString);
@@ -243,5 +275,13 @@ public class ElevationActivity extends AppCompatActivity {
 		Uri uri = Uri.fromParts("package", getPackageName(), null);
 		intent.setData(uri);
 		startActivity(intent);
+	}
+
+	private void showLocationIsInaccurate() {
+		approximateWarning.setVisibility(View.VISIBLE);
+	}
+
+	private void hideLocationIsInaccurate() {
+		approximateWarning.setVisibility(View.INVISIBLE);
 	}
 }

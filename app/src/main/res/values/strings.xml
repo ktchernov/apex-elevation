@@ -1,5 +1,5 @@
 <resources>
-	<string name="app_name">Peak</string>
+	<string name="app_name">Apex Elevation</string>
 	<string name="location_permission_rationale_title">Location permission</string>
 	<string name="location_permission_rationale_message">Simple Elevation needs to access your GPS
 		location in order to show you your elevation.
