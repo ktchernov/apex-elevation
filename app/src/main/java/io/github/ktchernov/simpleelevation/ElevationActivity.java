@@ -20,6 +20,7 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.TextView;
 
 import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
@@ -55,8 +56,11 @@ public class ElevationActivity extends AppCompatActivity {
 
 	@Inject ElevationRetriever elevationRetriever;
 
+	@BindView(R.id.content_layout) ViewGroup contentLayout;
+	@BindView(R.id.approximate_warning) View approximateWarning;
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 	@BindView(R.id.elevation_unit_text_view) TextView elevationUnitTextView;
+	private boolean noNetworkWarningShowing;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -172,7 +176,15 @@ public class ElevationActivity extends AppCompatActivity {
 				numberFormat.format(unitLocale.convertMetres(elevationValue));
 
 		if (elevation.fromGps) {
-			altitudeString = "approx. " + altitudeString;
+//			altitudeString = "approx. " + altitudeString;
+			approximateWarning.setVisibility(View.VISIBLE);
+			if (!noNetworkWarningShowing) {
+				noNetworkWarningShowing = true;
+				Snackbar.make(contentLayout, R.string.no_internet, Snackbar.LENGTH_INDEFINITE)
+						.show();
+			}
+		} else {
+			approximateWarning.setVisibility(View.INVISIBLE);
 		}
 
 		elevationTextView.setText(altitudeString);

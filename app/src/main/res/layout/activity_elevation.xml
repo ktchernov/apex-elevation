@@ -1,39 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
+<android.support.design.widget.CoordinatorLayout
 	xmlns:android="http://schemas.android.com/apk/res/android"
 	xmlns:tools="http://schemas.android.com/tools"
 	xmlns:app="http://schemas.android.com/apk/res-auto"
-	android:id="@+id/activity_elevation"
+	android:id="@+id/content_layout"
 	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	android:background="@color/colorPrimaryDark"
-	tools:context="io.github.ktchernov.simpleelevation.ElevationActivity">
+	android:layout_height="match_parent">
 
-	<ImageView
+	<android.support.constraint.ConstraintLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:src="@drawable/watercolour_cropped"
-		android:scaleType="centerCrop"/>
+		android:background="@color/colorPrimaryDark"
+		tools:context="io.github.ktchernov.simpleelevation.ElevationActivity">
 
-	<TextView
-		android:id="@+id/elevation_text_view"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:textAppearance="@style/ElevationTextAppearance"
-		android:text="@string/no_signal_elevation_placeholder"
-		app:layout_constraintBottom_toBottomOf="parent"
-		app:layout_constraintLeft_toLeftOf="parent"
-		app:layout_constraintRight_toRightOf="parent"
-		app:layout_constraintTop_toTopOf="parent"/>
+		<ImageView
+			android:layout_width="match_parent"
+			android:layout_height="match_parent"
+			android:src="@drawable/watercolour_cropped"
+			android:scaleType="centerCrop"
+			android:contentDescription="@null"/>
 
-	<TextView
-		android:id="@+id/elevation_unit_text_view"
-		android:layout_width="wrap_content"
-		android:layout_height="wrap_content"
-		android:textAppearance="@style/ElevationUnitTextAppearance"
-		android:text="@string/unit_metres"
-		android:paddingTop="8dp"
-		app:layout_constraintLeft_toRightOf="@+id/elevation_text_view"
-		app:layout_constraintTop_toTopOf="@+id/elevation_text_view"/>
+		<TextView
+			android:id="@+id/approximate_warning"
+			android:layout_width="wrap_content"
+			android:layout_height="0dp"
+			android:textAppearance="@style/ApproximateNoteTextAppearance"
+			android:text="@string/approximately"
+			app:layout_constraintBottom_toTopOf="@+id/elevation_text_view"
+			android:visibility="gone"
+			tools:visibility="visible"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"/>
 
-</android.support.constraint.ConstraintLayout>
+		<TextView
+			android:id="@+id/elevation_text_view"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textAppearance="@style/ElevationTextAppearance"
+			android:text="@string/no_signal_elevation_placeholder"
+			android:maxLines="1"
+			tools:text="4,789"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintLeft_toLeftOf="parent"
+			app:layout_constraintRight_toRightOf="parent"
+			app:layout_constraintTop_toTopOf="parent"
+			android:layout_marginEnd="56sp"
+			app:layout_constraintHorizontal_bias="0.6"/>
+
+		<TextView
+			android:id="@+id/elevation_unit_text_view"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:textAppearance="@style/ElevationUnitTextAppearance"
+			android:text="@string/unit_metres"
+			android:paddingTop="8dp"
+			app:layout_constraintLeft_toRightOf="@+id/elevation_text_view"
+			app:layout_constraintTop_toTopOf="@+id/elevation_text_view"/>
+
+	</android.support.constraint.ConstraintLayout>
+
+</android.support.design.widget.CoordinatorLayout>
