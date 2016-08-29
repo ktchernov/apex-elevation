@@ -2,6 +2,6 @@
 <resources>
 	<color name="colorPrimary">#bed5b9</color>
 	<color name="colorPrimaryDark">#bed5b9</color>
-	<color name="colorAccent">#ba4e24</color>
+	<color name="colorAccent">#f2662f</color>
 	<color name="colorNavigationBar">#24a5ba</color>
 </resources>

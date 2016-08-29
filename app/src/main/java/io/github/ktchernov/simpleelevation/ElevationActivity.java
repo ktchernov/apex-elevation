@@ -35,6 +35,7 @@ import javax.inject.Inject;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import butterknife.OnClick;
 import io.github.ktchernov.simpleelevation.api.Elevation;
 import rx.Observable;
 import rx.Subscription;
@@ -42,6 +43,9 @@ import rx.subscriptions.Subscriptions;
 import timber.log.Timber;
 
 public class ElevationActivity extends AppCompatActivity {
+
+	private static final int LOCATION_REQUEST_INTERVAL = 5000;
+	private static final int FASTEST_LOCATION_INTERVAL = 1000;
 
 	static {
 		if (BuildConfig.DEBUG) {
@@ -62,9 +66,9 @@ public class ElevationActivity extends AppCompatActivity {
 
 	@BindView(R.id.content_layout) ViewGroup contentLayout;
 	@BindView(R.id.approximate_warning) View approximateWarning;
+	@BindView(R.id.approximate_info) View approximateInfo;
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 	@BindView(R.id.elevation_unit_text_view) TextView elevationUnitTextView;
-	private Snackbar noNetworkSnackbar;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -90,7 +94,7 @@ public class ElevationActivity extends AppCompatActivity {
 					&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				startFetchLocation();
 			} else {
-				Snackbar.make(elevationTextView, R.string.location_permission_required_snackbar,
+				Snackbar.make(contentLayout, R.string.location_permission_required_snackbar,
 						Snackbar.LENGTH_LONG)
 						.setAction(R.string.settings_link, this::onSnackbarSettingsClick)
 						.show();
@@ -120,19 +124,29 @@ public class ElevationActivity extends AppCompatActivity {
 		elevationFetchSubscription.unsubscribe();
 	}
 
+	@OnClick(R.id.approximate_info) void onApproximateInfo() {
+		new AlertDialog.Builder(this)
+				.setTitle(R.string.no_internet_title)
+				.setMessage(R.string.no_internet_message)
+				.setNegativeButton(R.string.dismiss,
+						((dialogInterface, buttonIndex) -> dialogInterface.dismiss()))
+				.show();
+	}
+
 	private void startFetchLocation() {
 		Timber.v("startFetchLocation");
 		LocationRequest request = LocationRequest.create() //standard GMS LocationRequest
 				.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-				.setFastestInterval(500)
-				.setInterval(2000);
+				.setFastestInterval(FASTEST_LOCATION_INTERVAL)
+				.setInterval(LOCATION_REQUEST_INTERVAL);
 
 		elevationFetchSubscription = reactiveLocationProvider
 				.getUpdatedLocation(request)
 				.doOnNext(location -> locationIsStale = false)
-				.timeout(10, TimeUnit.SECONDS, getLastKnown())
+				.timeout(LOCATION_REQUEST_INTERVAL * 2, TimeUnit.SECONDS, getLastKnown())
 				.switchIfEmpty(onNoLocationAtAll())
-				.doOnCompleted(() -> contentLayout.postDelayed(this::startFetchLocation, 5000))
+				.doOnCompleted(() -> contentLayout
+						.postDelayed(this::startFetchLocation, LOCATION_REQUEST_INTERVAL))
 				.onBackpressureLatest()
 				.concatMap(location -> elevationRetriever.elevationObservable(location))
 				.subscribe(this::onElevation, this::onElevationError);
@@ -203,17 +217,10 @@ public class ElevationActivity extends AppCompatActivity {
 
 		if (elevation.fromGps) {
 			showLocationIsInaccurate();
-			if (!noNetworkShowing()) {
-				noNetworkSnackbar = Snackbar.make(contentLayout, R.string.no_internet,
-						Snackbar.LENGTH_INDEFINITE);
-				noNetworkSnackbar.show();
-			}
+			showNoNetworkInfo();
 		} else {
 			hideLocationIsInaccurate();
-			if (noNetworkShowing()) {
-				noNetworkSnackbar.dismiss();
-				noNetworkSnackbar = null;
-			}
+			hideNoNetworkInfo();
 		}
 
 		if (locationIsStale) {
@@ -225,8 +232,12 @@ public class ElevationActivity extends AppCompatActivity {
 		elevationTextView.setText(altitudeString);
 	}
 
-	public boolean noNetworkShowing() {
-		return noNetworkSnackbar != null && noNetworkSnackbar.isShownOrQueued();
+	private void showNoNetworkInfo() {
+		approximateInfo.setVisibility(View.VISIBLE);
+	}
+
+	private void hideNoNetworkInfo() {
+		approximateInfo.setVisibility(View.GONE);
 	}
 
 	private void onElevationError(Throwable throwable) {

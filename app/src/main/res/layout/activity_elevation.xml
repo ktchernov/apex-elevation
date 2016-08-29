@@ -18,7 +18,21 @@
 			android:layout_height="match_parent"
 			android:src="@drawable/watercolour_cropped"
 			android:scaleType="centerCrop"
-			android:contentDescription="@null"/>
+			android:contentDescription="@null"
+			app:layout_editor_absoluteY="0dp"
+			app:layout_editor_absoluteX="0dp"/>
+
+		<ImageView
+			android:id="@+id/approximate_info"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_marginStart="4dp"
+			app:srcCompat="@drawable/ic_info"
+			android:contentDescription="@string/more_info"
+			android:visibility="gone"
+			tools:visibility="visible"
+			app:layout_constraintLeft_toRightOf="@+id/approximate_warning"
+			app:layout_constraintTop_toTopOf="@+id/approximate_warning"/>
 
 		<TextView
 			android:id="@+id/approximate_warning"
@@ -44,7 +58,7 @@
 			app:layout_constraintLeft_toLeftOf="parent"
 			app:layout_constraintRight_toRightOf="parent"
 			app:layout_constraintTop_toTopOf="parent"
-			android:layout_marginEnd="56sp"
+			android:layout_marginEnd="56dp"
 			app:layout_constraintHorizontal_bias="0.6"/>
 
 		<TextView
