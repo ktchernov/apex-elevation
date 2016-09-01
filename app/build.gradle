@@ -24,6 +24,12 @@ android {
 
 		vectorDrawables.useSupportLibrary = true
 
+		if (properties.getProperty("googleElevationApiKey") == null) {
+			// Follow the instructions here:
+			// https://developers.google.com/maps/documentation/elevation/get-api-key
+			throw new GradleException("Please specify a googleElevationApiKey in local.properties")
+		}
+
 		resValue "string", "googleElevationApiKey", properties.getProperty("googleElevationApiKey")
 	}
 
