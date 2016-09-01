@@ -16,7 +16,7 @@
 		<ImageView
 			android:layout_width="match_parent"
 			android:layout_height="match_parent"
-			android:src="@drawable/watercolour_cropped"
+			android:src="@drawable/mountain_backdrop"
 			android:scaleType="centerCrop"
 			android:contentDescription="@null"
 			app:layout_editor_absoluteY="0dp"
