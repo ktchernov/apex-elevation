@@ -25,19 +25,12 @@ android {
 		vectorDrawables.useSupportLibrary = true
 
 		if (properties.getProperty("googleElevationApiKey") == null) {
-			// Follow the instructions here:
+			// Follow the instructions here to get a free API key:
 			// https://developers.google.com/maps/documentation/elevation/get-api-key
 			throw new GradleException("Please specify a googleElevationApiKey in local.properties")
 		}
 
 		resValue "string", "googleElevationApiKey", properties.getProperty("googleElevationApiKey")
-	}
-
-	buildTypes {
-		release {
-			minifyEnabled true
-			proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-		}
 	}
 
 	applicationVariants.all { variant ->
@@ -111,7 +104,7 @@ if (propsFile.exists()) {
 			release {
 				minifyEnabled true
 				shrinkResources false
-				useProguard false
+				useProguard true
 				proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
 				signingConfig signingConfigs.release
 			}
