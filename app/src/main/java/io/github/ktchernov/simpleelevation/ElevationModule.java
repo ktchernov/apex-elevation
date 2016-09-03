@@ -31,12 +31,14 @@ import retrofit2.mock.MockRetrofit;
 	}
 
 	@Singleton @Provides OkHttpClient okHttpClient() {
-		HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
-		logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
+		OkHttpClient.Builder builder = new OkHttpClient.Builder();
+		if (BuildConfig.DEBUG) {
+			HttpLoggingInterceptor logging = new HttpLoggingInterceptor();
+			logging.setLevel(HttpLoggingInterceptor.Level.BASIC);
+			builder = builder.addInterceptor(logging);
+		}
 
-		return new OkHttpClient.Builder()
-				.addInterceptor(logging)
-				.build();
+		return builder.build();
 	}
 
 	@Singleton @Provides Retrofit retrofit(OkHttpClient okHttpClient) {
