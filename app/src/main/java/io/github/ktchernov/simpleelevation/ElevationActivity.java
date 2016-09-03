@@ -244,9 +244,9 @@ public class ElevationActivity extends AppCompatActivity {
 				} catch (IntentSender.SendIntentException ex) {
 					Timber.e(ex, "Error opening settings activity.");
 				}
-				return Observable.error(new LocationNotAvaialbleException());
+				return Observable.error(new LocationNotAvaialableException());
 			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
-				return Observable.error(new LocationNotAvaialbleException());
+				return Observable.error(new LocationNotAvaialableException());
 			case LocationSettingsStatusCodes.SUCCESS:
 			default:
 				return fetchLocationObservable(request);
@@ -316,7 +316,7 @@ public class ElevationActivity extends AppCompatActivity {
 			if (handleGoogleApiConnectionException((GoogleAPIConnectionException) throwable)) {
 				return;
 			}
-		} else if (throwable instanceof LocationNotAvaialbleException) {
+		} else if (throwable instanceof LocationNotAvaialableException) {
 			showErrorSnackbar(R.string.location_settings_disabled_snackbar);
 			showLoadingIfNeeded();
 			return;
@@ -390,7 +390,7 @@ public class ElevationActivity extends AppCompatActivity {
 		return Snackbar.make(contentLayout, stringId, Snackbar.LENGTH_INDEFINITE);
 	}
 
-	private static class LocationNotAvaialbleException extends RuntimeException {
+	private static class LocationNotAvaialableException extends RuntimeException {
 	}
 
 	private static class LocationSettingsPendingException extends RuntimeException {
