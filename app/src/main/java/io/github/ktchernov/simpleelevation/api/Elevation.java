@@ -3,18 +3,20 @@ package io.github.ktchernov.simpleelevation.api;
 public class Elevation {
 	public final Double elevation;
 	public final boolean fromGps;
+	public final boolean highAccuracy;
 
-	public static Elevation fromApi(Double elevation) {
-		return new Elevation(elevation, false);
+	public static Elevation fromApi(Double elevation, boolean highAccuracy) {
+		return new Elevation(elevation, false, highAccuracy);
 	}
 
-	public static Elevation fromGps(double elevation) {
-		return new Elevation(elevation, true);
+	public static Elevation fromGps(double elevation, boolean highAccuracy) {
+		return new Elevation(elevation, true, highAccuracy);
 	}
 
-	Elevation(Double elevation, boolean fromGps) {
+	Elevation(Double elevation, boolean fromGps, boolean highAccuracy) {
 		this.elevation = elevation;
 		this.fromGps = fromGps;
+		this.highAccuracy = highAccuracy;
 	}
 
 	public Double elevation() {
@@ -29,6 +31,7 @@ public class Elevation {
 		}
 
 		return fromGps == elevationOther.fromGps &&
+				highAccuracy == elevationOther.highAccuracy &&
 				(elevation != null ? elevation.equals(elevationOther.elevation) :
 						elevationOther.elevation == null);
 
@@ -37,6 +40,7 @@ public class Elevation {
 	@Override public int hashCode() {
 		int result = elevation != null ? elevation.hashCode() : 0;
 		result = 31 * result + (fromGps ? 1 : 0);
+		result = 31 * result + (highAccuracy ? 1 : 0);
 		return result;
 	}
 

@@ -68,6 +68,7 @@ public class ElevationActivity extends AppCompatActivity {
 	private UnitLocale unitLocale;
 	private boolean locationIsStale;
 	private boolean hasElevation;
+	private InaccuracyReason locationInaccuracyReason;
 
 	@Inject ElevationRetriever elevationRetriever;
 
@@ -116,8 +117,9 @@ public class ElevationActivity extends AppCompatActivity {
 		super.onActivityResult(requestCode, resultCode, data);
 		if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK) {
 			errorSnackbar.dismiss();
-			startFetchLocation();
 		}
+
+		startFetchLocation();
 	}
 
 	@Override protected void onStart() {
@@ -142,12 +144,24 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	@OnClick(R.id.approximate_info) void onApproximateInfo() {
-		new AlertDialog.Builder(this)
-				.setTitle(R.string.no_internet_title)
-				.setMessage(R.string.no_internet_message)
+		AlertDialog.Builder errorDialogBuilder = new AlertDialog.Builder(this)
 				.setNegativeButton(R.string.dismiss,
-						((dialogInterface, buttonIndex) -> dialogInterface.dismiss()))
-				.show();
+						((dialogInterface, buttonIndex) -> dialogInterface.dismiss()));
+
+		switch (locationInaccuracyReason) {
+			case LOW_ACCURACY:
+				errorDialogBuilder = errorDialogBuilder
+						.setTitle(R.string.low_accuracy_title)
+						.setMessage(R.string.low_accuracy_message);
+				break;
+			case NO_NETWORK:
+				errorDialogBuilder = errorDialogBuilder
+						.setTitle(R.string.no_internet_title)
+						.setMessage(R.string.no_internet_message);
+				break;
+		}
+
+		errorDialogBuilder.show();
 	}
 
 	private void startFetchLocation() {
@@ -160,7 +174,7 @@ public class ElevationActivity extends AppCompatActivity {
 
 		LocationSettingsRequest locationSettingsRequest = new LocationSettingsRequest.Builder()
 				.addLocationRequest(request)
-				.setAlwaysShow(true)
+//				.setAlwaysShow(true)
 				.build();
 
 		reactiveLocationProvider.checkLocationSettings(locationSettingsRequest)
@@ -279,17 +293,13 @@ public class ElevationActivity extends AppCompatActivity {
 				numberFormat.format(unitLocale.convertMetres(elevationValue));
 
 		if (elevation.fromGps) {
-			showLocationIsInaccurate();
-			showNoNetworkInfo();
+			showLocationIsInaccurate(InaccuracyReason.NO_NETWORK);
 		} else {
-			hideLocationIsInaccurate();
-			hideNoNetworkInfo();
-		}
-
-		if (locationIsStale) {
-			showLocationIsInaccurate();
-		} else if (!elevation.fromGps) {
-			hideLocationIsInaccurate();
+			if (locationIsStale || !elevation.highAccuracy) {
+				showLocationIsInaccurate(InaccuracyReason.LOW_ACCURACY);
+			} else {
+				hideLocationIsInaccurate();
+			}
 		}
 
 		elevationTextView.setText(altitudeString);
@@ -298,14 +308,6 @@ public class ElevationActivity extends AppCompatActivity {
 	private void showBlankElevation() {
 		hideLocationIsInaccurate();
 		elevationTextView.setText(R.string.no_signal_elevation_placeholder);
-	}
-
-	private void showNoNetworkInfo() {
-		approximateInfo.setVisibility(View.VISIBLE);
-	}
-
-	private void hideNoNetworkInfo() {
-		approximateInfo.setVisibility(View.GONE);
 	}
 
 	private void onElevationError(Throwable throwable) {
@@ -370,12 +372,16 @@ public class ElevationActivity extends AppCompatActivity {
 		startActivity(intent);
 	}
 
-	private void showLocationIsInaccurate() {
+	private void showLocationIsInaccurate(InaccuracyReason inaccuracyReason) {
+		this.locationInaccuracyReason = inaccuracyReason;
 		approximateWarning.setVisibility(View.VISIBLE);
+		approximateInfo.setVisibility(View.VISIBLE);
 	}
 
 	private void hideLocationIsInaccurate() {
+		this.locationInaccuracyReason = null;
 		approximateWarning.setVisibility(View.INVISIBLE);
+		approximateInfo.setVisibility(View.INVISIBLE);
 	}
 
 	private void showErrorSnackbar(@StringRes int resId) {
@@ -394,5 +400,10 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	private static class LocationSettingsPendingException extends RuntimeException {
+	}
+
+	private enum InaccuracyReason {
+		NO_NETWORK,
+		LOW_ACCURACY
 	}
 }

@@ -22,4 +22,8 @@
 	<string name="no_internet_message">The Internet connection is used to show you a more accurate
 		elevation.
 	</string>
+	<string name="low_accuracy_title">Low accuracy</string>
+	<string name="low_accuracy_message">An accurate GPS location could not be retrieved right now,
+		an approximation is being used. For best results, you should be outdoors and
+		with GPS turned on in your device\'s location method settings.</string>
 </resources>

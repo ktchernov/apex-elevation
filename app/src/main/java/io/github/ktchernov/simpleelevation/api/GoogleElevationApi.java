@@ -50,12 +50,12 @@ public interface GoogleElevationApi {
 			return new ElevationResult(STATUS_OK, Collections.singletonList(new Result(elevation)));
 		}
 
-		public Elevation getElevation() {
+		public Elevation getElevation(boolean highAccuracy) {
 			if (!STATUS_OK.equals(status) || results == null || results.size() == 0) {
-				return Elevation.fromApi(null);
+				return Elevation.fromApi(null, highAccuracy);
 			}
 
-			return Elevation.fromApi(results.get(0).elevation);
+			return Elevation.fromApi(results.get(0).elevation, highAccuracy);
 		}
 
 		public static class Result {

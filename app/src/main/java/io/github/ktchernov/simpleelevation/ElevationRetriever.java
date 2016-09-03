@@ -13,6 +13,12 @@ import rx.Observable;
 import timber.log.Timber;
 
 class ElevationRetriever {
+	// accuracy above this threshold (in metres) will be considered low accuracy
+	private static final double CACHE_LOCATION_PREFERRED_ACCURACY = 30.0;
+
+	// if the new cached location is within this many meters, do not do a new API call
+	private static final double CACHE_LOCATION_MIN_DISTANCE = CACHE_LOCATION_PREFERRED_ACCURACY / 2;
+
 	private final GoogleElevationApi elevationApi;
 	private final String apiKey;
 	private final ThreadModel threadModel;
@@ -27,15 +33,17 @@ class ElevationRetriever {
 	}
 
 	Observable<Elevation> elevationObservable(Location location) {
-		Elevation gpsElevation = Elevation.fromGps(location.getAltitude());
-
 		if (!isBetterLocation(location)) {
 			Timber.v("Cached location used");
 			return Observable.just(lastElevation);
 		}
 
+		boolean highAccuracy = location.getAccuracy() < CACHE_LOCATION_PREFERRED_ACCURACY;
+
+		Elevation gpsElevation = Elevation.fromGps(location.getAltitude(), highAccuracy);
+
 		return elevationApi.getElevation(Locations.from(location), apiKey)
-				.map(GoogleElevationApi.ElevationResult::getElevation)
+				.map((elevationResult) -> elevationResult.getElevation(highAccuracy))
 				.doOnNext(elevation -> cacheElevation(location, elevation))
 				.doOnError(throwable -> Timber.e(throwable, "Error fetching elevation"))
 				.map(elevation -> elevation.elevation == null ? gpsElevation : elevation)
@@ -43,31 +51,16 @@ class ElevationRetriever {
 				.compose(threadModel.transformer());
 	}
 
-	private static final int CACHE_LOCATION_TIME_OUT = 1000 * 10;
 
-	// based on: https://developer.android.com/guide/topics/location/strategies.html
+	// Based on: https://developer.android.com/guide/topics/location/strategies.html
+	// But with more focus on the distance delta rather than the time.
 	private boolean isBetterLocation(Location location) {
 		if (currentBestLocation == null) {
 			// A new location is always better than no location
 			return true;
 		}
 
-		// Check whether the new location fix is newer or older
-		long timeDelta = location.getTime() - currentBestLocation.getTime();
-		boolean isSignificantlyNewer = timeDelta > CACHE_LOCATION_TIME_OUT;
-		boolean isSignificantlyOlder = timeDelta < -CACHE_LOCATION_TIME_OUT;
-		boolean isNewer = timeDelta > 0;
-
-		// If it's been more than two minutes since the current location, use the new location
-		// because the user has likely moved
-		if (isSignificantlyNewer) {
-			return true;
-			// If the new location is more than two minutes older, it must be worse
-		} else if (isSignificantlyOlder) {
-			return false;
-		}
-
-		boolean hasMoved = currentBestLocation.distanceTo(location) > 10.0;
+		boolean hasMoved = currentBestLocation.distanceTo(location) > CACHE_LOCATION_MIN_DISTANCE;
 		if (!hasMoved) {
 			return false;
 		}
@@ -76,11 +69,15 @@ class ElevationRetriever {
 		int accuracyDelta = (int) (location.getAccuracy() - currentBestLocation.getAccuracy());
 		boolean isLessAccurate = accuracyDelta > 0;
 		boolean isMoreAccurate = accuracyDelta < 0;
-		boolean isSignificantlyLessAccurate = accuracyDelta > 200;
+		boolean isSignificantlyLessAccurate = accuracyDelta > CACHE_LOCATION_PREFERRED_ACCURACY;
 
 		// Check if the old and new location are from the same provider
 		boolean isFromSameProvider = isSameProvider(location.getProvider(),
 				currentBestLocation.getProvider());
+
+		// Check whether the new location fix is newer or older
+		long timeDelta = location.getTime() - currentBestLocation.getTime();
+		boolean isNewer = timeDelta > 0;
 
 		// Determine location quality using a combination of timeliness and accuracy
 		if (isMoreAccurate) {

@@ -73,7 +73,20 @@ public class ElevationRetrieverTest {
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
 
-		testSubscriber.assertValue(Elevation.fromApi(TEST_ELEVATION));
+		testSubscriber.assertValue(Elevation.fromApi(TEST_ELEVATION, true));
+	}
+
+	@Test public void getElevation_lowAccuracyWithApiResult_usesApiResult() {
+		setupSuccessApiResult();
+
+		doReturn(50.f).when(mockLocation).getAccuracy();
+		Observable<Elevation> elevationObservable =
+				elevationRetriever.elevationObservable(mockLocation);
+
+		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
+		elevationObservable.subscribe(testSubscriber);
+
+		testSubscriber.assertValue(Elevation.fromApi(TEST_ELEVATION, false));
 	}
 
 	@Test public void getElevation_withNearbySecondLocation_usesCachedApiResult() {
@@ -89,7 +102,7 @@ public class ElevationRetrieverTest {
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
 
-		testSubscriber.assertValues(Elevation.fromApi(TEST_ELEVATION));
+		testSubscriber.assertValues(Elevation.fromApi(TEST_ELEVATION, true));
 		verify(mockElevationApi, times(1)).getElevation(anyObject(), anyObject());
 	}
 
@@ -108,7 +121,7 @@ public class ElevationRetrieverTest {
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
 
-		testSubscriber.assertValues(Elevation.fromApi(TEST_ELEVATION));
+		testSubscriber.assertValues(Elevation.fromApi(TEST_ELEVATION, true));
 		verify(mockElevationApi, times(2)).getElevation(anyObject(), anyObject());
 	}
 
@@ -121,7 +134,20 @@ public class ElevationRetrieverTest {
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
 
-		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION));
+		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION, true));
+	}
+
+	@Test public void getElevation_lowAccuracyNoApiResult_usesOriginalResult() {
+		networkBehavior.setFailurePercent(100);
+		doReturn(TEST_ELEVATION).when(mockLocation).getAltitude();
+		doReturn(50.f).when(mockLocation).getAccuracy();
+		Observable<Elevation> elevationObservable =
+				elevationRetriever.elevationObservable(mockLocation);
+
+		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
+		elevationObservable.subscribe(testSubscriber);
+
+		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION, false));
 	}
 
 	@Test public void getElevation_errorApiResult_usesOriginalResult() {
@@ -135,7 +161,7 @@ public class ElevationRetrieverTest {
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
 
-		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION));
+		testSubscriber.assertValue(Elevation.fromGps(TEST_ELEVATION, true));
 	}
 
 	private void setupSuccessApiResult() {
