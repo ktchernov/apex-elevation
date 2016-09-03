@@ -175,7 +175,7 @@ public class ElevationActivity extends AppCompatActivity {
 		return reactiveLocationProvider
 				.getUpdatedLocation(request)
 				.doOnNext(location -> locationIsStale = false)
-				.timeout(LOCATION_REQUEST_INTERVAL * 2, TimeUnit.SECONDS, getLastKnown())
+				.timeout(LOCATION_REQUEST_INTERVAL * 4, TimeUnit.SECONDS, getLastKnown())
 				.switchIfEmpty(onNoLocationAtAll())
 				.doOnCompleted(() -> contentLayout
 						.postDelayed(this::startFetchLocation, LOCATION_REQUEST_INTERVAL))
