@@ -1,10 +1,5 @@
 package io.github.ktchernov.simpleelevation;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.common.SupportErrorDialogFragment;
-import com.google.android.gms.location.LocationRequest;
-
 import android.Manifest;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -15,6 +10,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
+import android.support.annotation.StringRes;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
@@ -22,10 +18,17 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 
-import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
-import pl.charmas.android.reactivelocation.observables.GoogleAPIConnectionException;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GoogleApiAvailability;
+import com.google.android.gms.common.SupportErrorDialogFragment;
+import com.google.android.gms.common.api.Status;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationSettingsRequest;
+import com.google.android.gms.location.LocationSettingsResult;
+import com.google.android.gms.location.LocationSettingsStatusCodes;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -37,6 +40,8 @@ import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 import io.github.ktchernov.simpleelevation.api.Elevation;
+import pl.charmas.android.reactivelocation.ReactiveLocationProvider;
+import pl.charmas.android.reactivelocation.observables.GoogleAPIConnectionException;
 import rx.Observable;
 import rx.Subscription;
 import rx.subscriptions.Subscriptions;
@@ -55,12 +60,14 @@ public class ElevationActivity extends AppCompatActivity {
 
 	private static final int REQUEST_CODE_GRANT_LOCATION_PERMISSION = 100;
 	private static final int REQUEST_RESOLVE_ERROR = 101;
+	private static final int REQUEST_CHECK_SETTINGS = 102;
 
 	private final NumberFormat numberFormat = new DecimalFormat("###,###");
 	private ReactiveLocationProvider reactiveLocationProvider;
 	private Subscription elevationFetchSubscription = Subscriptions.unsubscribed();
 	private UnitLocale unitLocale;
 	private boolean locationIsStale;
+	private boolean hasElevation;
 
 	@Inject ElevationRetriever elevationRetriever;
 
@@ -69,6 +76,8 @@ public class ElevationActivity extends AppCompatActivity {
 	@BindView(R.id.approximate_info) View approximateInfo;
 	@BindView(R.id.elevation_text_view) TextView elevationTextView;
 	@BindView(R.id.elevation_unit_text_view) TextView elevationUnitTextView;
+	@BindView(R.id.gps_progress_bar) ProgressBar gpsProgressBar;
+	private Snackbar errorSnackbar;
 
 	@Override protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -94,12 +103,20 @@ public class ElevationActivity extends AppCompatActivity {
 					&& grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				startFetchLocation();
 			} else {
-				Snackbar.make(contentLayout, R.string.location_permission_required_snackbar,
-						Snackbar.LENGTH_LONG)
+				createErrorSnackbar(R.string.location_permission_required_snackbar)
 						.setAction(R.string.settings_link, this::onSnackbarSettingsClick)
 						.show();
 			}
 
+		}
+	}
+
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		super.onActivityResult(requestCode, resultCode, data);
+		if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK) {
+			errorSnackbar.dismiss();
+			startFetchLocation();
 		}
 	}
 
@@ -135,12 +152,27 @@ public class ElevationActivity extends AppCompatActivity {
 
 	private void startFetchLocation() {
 		Timber.v("startFetchLocation");
-		LocationRequest request = LocationRequest.create() //standard GMS LocationRequest
+
+		LocationRequest request = LocationRequest.create()
 				.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
 				.setFastestInterval(FASTEST_LOCATION_INTERVAL)
 				.setInterval(LOCATION_REQUEST_INTERVAL);
 
-		elevationFetchSubscription = reactiveLocationProvider
+		LocationSettingsRequest locationSettingsRequest = new LocationSettingsRequest.Builder()
+				.addLocationRequest(request)
+				.setAlwaysShow(true)
+				.build();
+
+		reactiveLocationProvider.checkLocationSettings(locationSettingsRequest)
+				.flatMap((locationSettingsResult) ->
+						fetchLocationIfSettingsEnabled(locationSettingsResult, request))
+				.doOnSubscribe(this::showLoadingIfNeeded)
+				.doOnUnsubscribe(this::hideLoading)
+				.subscribe(this::onElevation, this::onElevationError);
+	}
+
+	private Observable<Elevation> fetchLocationObservable(LocationRequest request) {
+		return reactiveLocationProvider
 				.getUpdatedLocation(request)
 				.doOnNext(location -> locationIsStale = false)
 				.timeout(LOCATION_REQUEST_INTERVAL * 2, TimeUnit.SECONDS, getLastKnown())
@@ -148,8 +180,7 @@ public class ElevationActivity extends AppCompatActivity {
 				.doOnCompleted(() -> contentLayout
 						.postDelayed(this::startFetchLocation, LOCATION_REQUEST_INTERVAL))
 				.onBackpressureLatest()
-				.concatMap(location -> elevationRetriever.elevationObservable(location))
-				.subscribe(this::onElevation, this::onElevationError);
+				.concatMap(location -> elevationRetriever.elevationObservable(location));
 	}
 
 	private Observable<Location> onNoLocationAtAll() {
@@ -189,7 +220,6 @@ public class ElevationActivity extends AppCompatActivity {
 			}
 
 			return false;
-
 		}
 
 		return true;
@@ -203,13 +233,46 @@ public class ElevationActivity extends AppCompatActivity {
 		startActivity(intent);
 	}
 
+	private Observable<Elevation> fetchLocationIfSettingsEnabled(
+			LocationSettingsResult locationSettingsResult, LocationRequest request) {
+		Status status = locationSettingsResult.getStatus();
+		switch (status.getStatusCode()) {
+			case LocationSettingsStatusCodes.RESOLUTION_REQUIRED:
+				try {
+					status.startResolutionForResult(this, REQUEST_CHECK_SETTINGS);
+					return Observable.error(new LocationSettingsPendingException());
+				} catch (IntentSender.SendIntentException ex) {
+					Timber.e(ex, "Error opening settings activity.");
+				}
+				return Observable.error(new LocationNotAvaialbleException());
+			case LocationSettingsStatusCodes.SETTINGS_CHANGE_UNAVAILABLE:
+				return Observable.error(new LocationNotAvaialbleException());
+			case LocationSettingsStatusCodes.SUCCESS:
+			default:
+				return fetchLocationObservable(request);
+		}
+	}
+
+	private void showLoadingIfNeeded() {
+		if (!hasElevation) {
+			gpsProgressBar.setVisibility(View.VISIBLE);
+		}
+	}
+
+	private void hideLoading() {
+		gpsProgressBar.setVisibility(View.GONE);
+	}
+
 	private void onElevation(Elevation elevation) {
-		if (elevation == null) {
-			hideLocationIsInaccurate();
-			elevationTextView.setText(R.string.no_signal_elevation_placeholder);
+		hideLoading();
+
+		hasElevation = (elevation != null);
+		if (!hasElevation) {
+			showBlankElevation();
 			elevationFetchSubscription.unsubscribe();
 			return;
 		}
+
 		Double elevationValue = elevation.elevation;
 		String altitudeString = elevationValue == null ?
 				getString(R.string.no_signal_elevation_placeholder) :
@@ -232,6 +295,11 @@ public class ElevationActivity extends AppCompatActivity {
 		elevationTextView.setText(altitudeString);
 	}
 
+	private void showBlankElevation() {
+		hideLocationIsInaccurate();
+		elevationTextView.setText(R.string.no_signal_elevation_placeholder);
+	}
+
 	private void showNoNetworkInfo() {
 		approximateInfo.setVisibility(View.VISIBLE);
 	}
@@ -241,36 +309,21 @@ public class ElevationActivity extends AppCompatActivity {
 	}
 
 	private void onElevationError(Throwable throwable) {
+		hasElevation = false;
+		showBlankElevation();
+
 		if (throwable instanceof GoogleAPIConnectionException) {
-			try {
-				GoogleAPIConnectionException googleAPIConnectionException =
-						(GoogleAPIConnectionException) throwable;
-
-				ConnectionResult connectionResult =
-						googleAPIConnectionException.getConnectionResult();
-
-				if (connectionResult.hasResolution()) {
-					connectionResult
-							.startResolutionForResult(
-									this,
-									ConnectionResult.RESOLUTION_REQUIRED);
-					return;
-				} else {
-					SupportErrorDialogFragment errorDialogFragment =
-							new SupportErrorDialogFragment();
-					Bundle args = new Bundle();
-					args.putInt("dialog_error", connectionResult.getErrorCode());
-					errorDialogFragment.setArguments(args);
-					errorDialogFragment.show(getSupportFragmentManager(), "errordialog");
-
-					GoogleApiAvailability.getInstance().getErrorDialog(
-							this, connectionResult.getErrorCode(), REQUEST_RESOLVE_ERROR).show();
-
-					return;
-				}
-			} catch (IntentSender.SendIntentException e) {
-				Timber.e(e, "Could not send intent");
+			if (handleGoogleApiConnectionException((GoogleAPIConnectionException) throwable)) {
+				return;
 			}
+		} else if (throwable instanceof LocationNotAvaialbleException) {
+			showErrorSnackbar(R.string.location_settings_disabled_snackbar);
+			showLoadingIfNeeded();
+			return;
+		} else if (throwable instanceof LocationSettingsPendingException) {
+			showErrorSnackbar(R.string.location_settings_pending_snackbar);
+			showLoadingIfNeeded();
+			return;
 		}
 
 		new AlertDialog.Builder(this)
@@ -278,6 +331,35 @@ public class ElevationActivity extends AppCompatActivity {
 				.setNegativeButton(R.string.dismiss, ((dialogInterface, buttonIndex) ->
 						dialogInterface.dismiss()))
 				.show();
+	}
+
+	private boolean handleGoogleApiConnectionException(GoogleAPIConnectionException throwable) {
+		try {
+			ConnectionResult connectionResult = throwable.getConnectionResult();
+
+			if (connectionResult.hasResolution()) {
+				connectionResult
+						.startResolutionForResult(
+								this,
+								ConnectionResult.RESOLUTION_REQUIRED);
+				return true;
+			} else {
+				SupportErrorDialogFragment errorDialogFragment =
+						new SupportErrorDialogFragment();
+				Bundle args = new Bundle();
+				args.putInt("dialog_error", connectionResult.getErrorCode());
+				errorDialogFragment.setArguments(args);
+				errorDialogFragment.show(getSupportFragmentManager(), "errordialog");
+
+				GoogleApiAvailability.getInstance().getErrorDialog(
+						this, connectionResult.getErrorCode(), REQUEST_RESOLVE_ERROR).show();
+
+				return true;
+			}
+		} catch (IntentSender.SendIntentException e) {
+			Timber.e(e, "Could not send intent");
+		}
+		return false;
 	}
 
 	private void onSnackbarSettingsClick(View view) {
@@ -294,5 +376,23 @@ public class ElevationActivity extends AppCompatActivity {
 
 	private void hideLocationIsInaccurate() {
 		approximateWarning.setVisibility(View.INVISIBLE);
+	}
+
+	private void showErrorSnackbar(@StringRes int resId) {
+		if (errorSnackbar != null) {
+			errorSnackbar.dismiss();
+		}
+		errorSnackbar = createErrorSnackbar(resId);
+		errorSnackbar.show();
+	}
+
+	private Snackbar createErrorSnackbar(@StringRes int stringId) {
+		return Snackbar.make(contentLayout, stringId, Snackbar.LENGTH_INDEFINITE);
+	}
+
+	private static class LocationNotAvaialbleException extends RuntimeException {
+	}
+
+	private static class LocationSettingsPendingException extends RuntimeException {
 	}
 }

@@ -10,6 +10,8 @@
 	<string name="dismiss">Dismiss</string>
 	<string name="location_permission_required_snackbar">Please allow access to your location
 	</string>
+	<string name="location_settings_disabled_snackbar">Please enable GPS location in your device settings</string>
+	<string name="location_settings_pending_snackbar">Your GPS location is required to determine your elevation</string>
 	<string name="settings_link">Settings</string>
 	<string name="no_signal_elevation_placeholder">—</string>
 	<string name="unit_metres">m</string>
