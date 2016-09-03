@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<string name="app_name">Апекс - Высота</string>
+	<string name="approximately">примерно</string>
+	<string name="dismiss">Хорошо</string>
+	<string name="error_could_not_fetch_location">Произошла ошибка при получении местоположение с помощю GPS.</string>
+	<string name="go_to_settings">Настройки</string>
+	<string name="location_permission_rationale_message">Для Апекса нужна ваше GPS местоположение, чтобы показать вам вашу высоту.</string>
+	<string name="location_permission_rationale_title">Разрешение</string>
+	<string name="location_permission_required_snackbar">Пожалуйста разрешите доступ к данным о местоположении</string>
+	<string name="location_settings_disabled_snackbar">Пожалуйста включите GPS в настройках вашего телефона</string>
+	<string name="location_settings_pending_snackbar">Местоположении через GPS нужно чтобы показатъ вам вашу высоту</string>
+	<string name="low_accuracy_title">Низкая точность</string>
+	<string name="low_accuracy_message">Точное местоположение GPS не может быть получен прямо сейчас,\n        приближение используется. Для наилучших результатов, вы должны быть на открытом воздухе и\n        с GPS включен в настройках вашего телефона.</string>
+	<string name="more_info">больше информации</string>
+	<string name="no_internet_title">Нет соединения с интернетом</string>
+	<string name="no_internet_message">Подключение к Интернету используется чтобы показать вам более точную высоту.</string>
+	<string name="no_signal_elevation_placeholder">—</string>
+	<string name="settings_link">Настройки</string>
+	<string name="unit_metres">м</string>
+	<string name="unit_feet">фут</string>
+</resources>
