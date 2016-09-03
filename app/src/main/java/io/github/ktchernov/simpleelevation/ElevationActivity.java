@@ -117,9 +117,8 @@ public class ElevationActivity extends AppCompatActivity {
 		super.onActivityResult(requestCode, resultCode, data);
 		if (requestCode == REQUEST_CHECK_SETTINGS && resultCode == RESULT_OK) {
 			errorSnackbar.dismiss();
+			startFetchLocation();
 		}
-
-		startFetchLocation();
 	}
 
 	@Override protected void onStart() {
