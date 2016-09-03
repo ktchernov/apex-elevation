@@ -4,9 +4,6 @@ import android.location.Location;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
 
 import java.util.Collections;
 import java.util.concurrent.TimeUnit;
@@ -31,18 +28,18 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-@RunWith(MockitoJUnitRunner.class)
 public class ElevationRetrieverTest {
 
 	private static final String TEST_API_KEY = "apiKey";
 	private static final double TEST_ELEVATION = 123.11;
 	private static final double TEST_LONGITUDE = 12.;
 	private static final double TEST_LATITUDE = 41.;
+	private static final long TEST_LOCATION_TIME = 1000;
 
 	private MockElevationApi mockElevationApi;
 	private ElevationRetriever elevationRetriever;
 	private NetworkBehavior networkBehavior;
-	@Mock Location mockLocation;
+	private Location mockLocation;
 
 	@Before public void setUp() {
 		networkBehavior = NetworkBehavior.create();
@@ -65,8 +62,7 @@ public class ElevationRetrieverTest {
 		elevationRetriever =
 				new ElevationRetriever(mockElevationApi, TEST_API_KEY, immediateThreadModel);
 
-		doReturn(TEST_LONGITUDE).when(mockLocation).getLongitude();
-		doReturn(TEST_LATITUDE).when(mockLocation).getLatitude();
+		mockLocation = createMockLocation(TEST_LOCATION_TIME);
 	}
 
 	@Test public void getElevation_withApiResult_usesApiResult() {
@@ -80,13 +76,15 @@ public class ElevationRetrieverTest {
 		testSubscriber.assertValue(Elevation.fromApi(TEST_ELEVATION));
 	}
 
-	@Test public void getElevation_withSameSecondLocation_usesCachedApiResult() {
+	@Test public void getElevation_withNearbySecondLocation_usesCachedApiResult() {
 		setupSuccessApiResult();
 		Observable<Elevation> elevationObservable =
 				elevationRetriever.elevationObservable(mockLocation);
 		elevationObservable.subscribe();
+
+		Location mockLocation2 = createMockLocation(TEST_LOCATION_TIME + 1);
 		elevationObservable =
-				elevationRetriever.elevationObservable(mockLocation);
+				elevationRetriever.elevationObservable(mockLocation2);
 
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
@@ -95,15 +93,17 @@ public class ElevationRetrieverTest {
 		verify(mockElevationApi, times(1)).getElevation(anyObject(), anyObject());
 	}
 
-	@Test public void getElevation_withFarSecondLocation_usesCachedApiResult() {
+	@Test public void getElevation_withFarSecondLocation_getsNewApiResult() {
 		setupSuccessApiResult();
 		Observable<Elevation> elevationObservable =
 				elevationRetriever.elevationObservable(mockLocation);
 		elevationObservable.subscribe();
 
 		doReturn(50.f).when(mockLocation).distanceTo(anyObject());
+		Location mockLocation2 = createMockLocation(TEST_LOCATION_TIME + 1);
+
 		elevationObservable =
-				elevationRetriever.elevationObservable(mock(Location.class));
+				elevationRetriever.elevationObservable(mockLocation2);
 
 		TestSubscriber<Elevation> testSubscriber = new TestSubscriber<>();
 		elevationObservable.subscribe(testSubscriber);
@@ -142,5 +142,13 @@ public class ElevationRetrieverTest {
 		mockElevationApi.setElevation(new ElevationResult(
 				ElevationResult.STATUS_OK,
 				Collections.singletonList(new ElevationResult.Result(TEST_ELEVATION))));
+	}
+
+	private Location createMockLocation(long time) {
+		Location mockLocation = mock(Location.class);
+		doReturn(TEST_LONGITUDE).when(mockLocation).getLongitude();
+		doReturn(TEST_LATITUDE).when(mockLocation).getLatitude();
+		doReturn(time).when(mockLocation).getTime();
+		return mockLocation;
 	}
 }

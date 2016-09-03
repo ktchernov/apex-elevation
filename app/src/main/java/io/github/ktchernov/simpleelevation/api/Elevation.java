@@ -24,6 +24,10 @@ public class Elevation {
 	@Override public boolean equals(Object o) {
 		Elevation elevationOther = (Elevation) o;
 
+		if (elevationOther == null) {
+			return false;
+		}
+
 		return fromGps == elevationOther.fromGps &&
 				(elevation != null ? elevation.equals(elevationOther.elevation) :
 						elevationOther.elevation == null);
