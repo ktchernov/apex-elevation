@@ -89,7 +89,7 @@ public class ElevationActivity extends AppCompatActivity {
 		reactiveLocationProvider = new ReactiveLocationProvider(getApplicationContext());
 
 		ElevationComponent elevationComponent = DaggerElevationComponent.builder()
-				.elevationModule(new ElevationModule(getString(R.string.googleElevationApiKey)))
+				.elevationModule(new ElevationModule(getString(R.string.googleElevationApiKey), getApplicationContext()))
 				.build();
 
 		elevationComponent.inject(this);

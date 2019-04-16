@@ -33,10 +33,10 @@ class ElevationRetriever {
 	}
 
 	Observable<Elevation> elevationObservable(Location location) {
-		if (!isBetterLocation(location)) {
-			Timber.v("Cached location used");
-			return Observable.just(lastElevation);
-		}
+//		if (!isBetterLocation(location)) {
+//			Timber.v("Cached location used");
+//			return Observable.just(lastElevation);
+//		}
 
 		boolean highAccuracy = location.getAccuracy() < CACHE_LOCATION_PREFERRED_ACCURACY;
 
